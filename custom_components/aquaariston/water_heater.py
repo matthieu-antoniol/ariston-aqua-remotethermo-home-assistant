@@ -3,15 +3,13 @@ import logging
 from datetime import timedelta
 
 from homeassistant.components.water_heater import (
-    SUPPORT_OPERATION_MODE,
-    SUPPORT_TARGET_TEMPERATURE,
     WaterHeaterEntity,
+    WaterHeaterEntityFeature,
 )
 from homeassistant.const import (
     ATTR_TEMPERATURE,
     CONF_NAME,
-    TEMP_CELSIUS,
-    TEMP_FAHRENHEIT,
+    UnitOfTemperature,
 )
 
 from .const import (
@@ -53,6 +51,11 @@ class AristonAquaWaterHeater(WaterHeaterEntity):
         """Initialize the thermostat."""
         self._name = name
         self._api = device.api.ariston_api
+        self._attr_temperature_unit = UnitOfTemperature.CELSIUS
+        self._attr_supported_features = (
+            WaterHeaterEntityFeature.TARGET_TEMPERATURE |
+            WaterHeaterEntityFeature.OPERATION_MODE
+        )
 
     @property
     def unique_id(self):
@@ -89,11 +92,6 @@ class AristonAquaWaterHeater(WaterHeaterEntity):
         return self._api.dhw_available
 
     @property
-    def supported_features(self):
-        """Return the list of supported features."""
-        return SUPPORT_TARGET_TEMPERATURE | SUPPORT_OPERATION_MODE
-
-    @property
     def current_temperature(self):
         """Return the temperature"""
         try:
@@ -101,11 +99,6 @@ class AristonAquaWaterHeater(WaterHeaterEntity):
         except KeyError:
             return None
         return current_temp
-
-    @property
-    def temperature_unit(self):
-        """Return the unit of measurement."""
-        return TEMP_CELSIUS
 
     @property
     def min_temp(self):
@@ -174,7 +167,7 @@ class AristonAquaWaterHeater(WaterHeaterEntity):
         try:
             current_op = self._api.sensor_values[PARAM_MODE][VALUE]
         except KeyError:
-            return VAL_OFFLINE
+            return None
         return current_op
 
     def set_temperature(self, **kwargs):
